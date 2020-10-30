@@ -1,0 +1,26 @@
+{{ field("paypal_id", config('paypal.id'), 'Identifiant du client PayPal') }}
+{{ field("paypal_secret", config('paypal.secret'), 'Secret du client PayPal', {type: 'password'}) }}
+<div class="card">
+    <div class="card-body">
+
+        <h4>Récupérer ses identifiants du Client PayPal</h4>
+        <strong>1) Ouvrir un compte</strong>
+        <p>
+            Pour ouvrir un compte paypal, Allez sur le site de <a href="https://paypal.com/fr/" target="_BLANK"> Paypal</a>.
+            Cliquez sur "Ouvrir un compte" .
+            Remplissez les champs correspondants avec vos informations personnelle.
+            Il est fortement conseillé d'utiliser un compte "PayPal Business" pour accepter les paiements.
+            <a href="https://www.paypal.com/us/smarthelp/article/what-is-the-difference-between-personal,-premier,-and-business-accounts-faq2258" target="_BLANK">Plus d'informations sur la différence ici.</a>
+        </p>
+        <strong>2) Créer son application</strong>
+        <p>
+            Préambule, pour tester d'executer des paiements sans utiliser votre compte créer plus haut.
+            Vous pouvez créer des <a href="https://developer.paypal.com/developer/accounts/">"Sandbox test account"</a>
+            Il suffit de créer un compte vendeur et acheteur pour le créer.<br/>
+            Pour créer un application et recevoir des paiements via PayPal. Aller sur le site de <a href="https://developer.paypal.com/home/" target="_BLANK"> Paypal Developper</a>.
+            Cliquez sur "Connexion".
+            Remplissez les champs correspondants avec vos informations d'authentification.
+            Une fois authentifié, <a href="https://developer.paypal.com/developer/applications/create" target="_BLANK">Créez-vous une application</a> pour récupérer vos identifiants Client.
+        </p>
+    </div>
+</div>
