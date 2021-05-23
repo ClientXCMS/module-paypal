@@ -1,0 +1,43 @@
+<div class="col-md-6 col-sm-12">
+    <div class="card">
+        <div class="card-body">
+            <h4><i class="fab fa-paypal mr-2"></i> PayPal </h4>
+            <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">ID MySQL</th>
+                        <th scope="col">ID Paiement</th>
+                        <th scope="col">Total</th>
+                        <th scope="col">Email</th>
+                        <th scope="col" class="bullet">Aprouvé</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% if transactions is not empty %}
+                    {% for item in transactions %}
+                    <tr>
+                        <td>#{{ item.id }}</td>
+                        <td>{{ item.paymentId }}</td>
+                        <td>{{ item.total }}</td>
+                        <td>{{ item.payerEmail }}</td>
+                        <td class="bullet"><div class="bullet bullet-{{ item.state == 'approved' ? 'yes' : 'no' }}"></div></td>
+                        <td>
+                            <a href="{{ path('paypal.crud.edit', {id: item.id}) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Voir">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="6">{{ trans("no_record") }}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+</div>

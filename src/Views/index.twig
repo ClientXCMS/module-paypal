@@ -1,0 +1,70 @@
+{% extends '@admin/layout.twig' %}
+
+{% block style %}
+{% include '@admin/bullet.twig' %}
+{% endblock %}
+{% block title %}Paiement PayPal{% endblock %}
+{% block pagetitle %}PayPal{% endblock %}
+{% block pagesubtitle %}Administez les différents paiement via PayPal du système.{% endblock %}
+
+{% block body %}
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex bd-highlight mb-3">
+            <div class="p-2 bd-highlight">
+                <form method="GET" class="form-inline mb-3 mr-3">
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Rechercher" name="s" value="{{ query }}">
+                    </div>
+                    <button type="submit" class="btn btn-info" title="Rechercher"><i class="fas fa-search"></i></a>
+                </form>
+            </div>
+        </div>
+        <div class="table-responsive">
+        
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">ID MySQL</th>
+                        <th scope="col">ID Paiement</th>
+                        <th scope="col">Total</th>
+                        <th scope="col">Email</th>
+                        <th scope="col" class="bullet">Aprouvé</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% if items is not empty %}
+                    {% for item in items %}
+                    <tr>
+                        <td>#{{ item.id }}</td>
+                        <td>{{ item.paymentId }}</td>
+                        <td>{{ item.total }}</td>
+                        <td>{{ item.payerEmail }}</td>
+                        <td class="bullet"><div class="bullet bullet-{{ item.state == 'approved' ? 'yes' : 'no' }}"></div></td>
+                        <td>
+                            <a href="{{ path(routePrefix ~'.edit', {id: item.id}) }}" class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Voir">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="6">{{ trans("no_record") }}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            </div>
+            <div class="d-flex justify-content-center mt-4">
+                {% if query is defined %}
+                    {{ paginate(items, routePrefix ~'.index', {'query':query}) }}
+                {% endif %}
+                {% if query is not defined %}
+                    {{ paginate(items, routePrefix ~'.index') }}
+                {% endif %}
+            </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends '@admin/layout.twig' %}
+{% block title %} Paiement PayPal {{ item.pymentId }}{% endblock %}
+{% block pagetitle %} Paiement PayPal {% endblock %}
+{% block pagesubtitle %} Paiement PayPal n°{{item.id }} PayPal.{% endblock %}
+{% block body %}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% include viewPath ~'/form.twig'%}
+                <a href="{{ routePrefix ~ '.index' }}" class="btn btn-secondary">Retour</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+ {% endblock %}
