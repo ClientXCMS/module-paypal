@@ -110,12 +110,8 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
             $captures = $result->purchase_units[0]->payments->captures;
             $transaction->setTransactionId($captures[0]->id);
             $this->service->updateTransactionId($transaction);
-
-            if ($this->service->isOrder($transaction)) {
-                $this->service->confirmOrder($transaction, $user->getId());
-            }
-            
             $transaction->setState($transaction::COMPLETED);
+            $this->service->complete($transaction);
             $this->service->changeState($transaction);
             return $transaction;
         } catch (Exception $e) {
