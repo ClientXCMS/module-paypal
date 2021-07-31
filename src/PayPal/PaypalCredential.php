@@ -12,7 +12,7 @@ class PaypalCredential
     public string $secret;
     public bool $live;
 
-    public function __construct($id, $secret, $live)
+    public function __construct($secret,$id, $live)
     {
         $this->check($id);
         $this->check($secret);
