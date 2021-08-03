@@ -39,16 +39,17 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
                 'sku' => $item->getId(),
                 'unit_amount' => [
                     'currency_code' => $transaction->getCurrency(),
-                    'value' => (float)$item->priceWithTax(),
+                    'value' => round((float)$item->price(), 2),
                 ],
-                'setup_fee' => [
+                'shipping' => [
                     'currency_code' => $transaction->getCurrency(),
-                    'value' => $item->getOrderable()->getPrice($item->getOrderable()->getRecurring()->getName(), true) - $item->getOrderable()->getPrice($item->getOrderable()->getRecurring()->getName()),
+                    'value' => round((float)$item->setupfee(), 2),
                 ],
                 'quantity' => $item->getQuantity(),
                 'category' => 'DIGITAL_GOODS'
             ];
         })->toArray();
+
 
         $links = $this->getRedirectsLinks($request, $transaction);
 
@@ -72,11 +73,11 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
                     'soft_descriptor' => $transaction->getId(),
                     'amount' => [
                         'currency_code' => $transaction->getCurrency(),
-                        'value' => $transaction->priceWithTax(),
+                        'value' => round($transaction->priceWithTax(), 2),
                         'breakdown' => [
                             'item_total' => [
                                 'currency_code' => $transaction->getCurrency(),
-                                'value' => $transaction->priceWithTax(),
+                                'value' => round($transaction->priceWithTax(), 2),
                             ],
                         ],
                     ],
