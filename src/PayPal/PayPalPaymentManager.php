@@ -39,11 +39,7 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
                 'sku' => $item->getId(),
                 'unit_amount' => [
                     'currency_code' => $transaction->getCurrency(),
-                    'value' => round((float)$item->price(), 2),
-                ],
-                'shipping' => [
-                    'currency_code' => $transaction->getCurrency(),
-                    'value' => round((float)$item->setupfee(), 2),
+                    'value' => round((float)$item->priceWithTax(), 2),
                 ],
                 'quantity' => $item->getQuantity(),
                 'category' => 'DIGITAL_GOODS'
