@@ -2,6 +2,7 @@
 
 use App\PayPal\PaypalCredential;
 use App\PayPal\PayPalCredentialFactory;
+use App\PayPal\PayPalPaymentBoard;
 use App\PayPal\PayPalPaymentType;
 
 use function \DI\get;
@@ -14,4 +15,5 @@ return [
     'paypal.live'   => env("PAYPAL_LIVE"),
     'payments.type' => add([get(PayPalPaymentType::class)]),
     PaypalCredential::class => factory(PayPalCredentialFactory::class),
+    'payment.boards' => add(get(PayPalPaymentBoard::class))
 ];

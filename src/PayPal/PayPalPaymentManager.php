@@ -39,16 +39,13 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
                 'sku' => $item->getId(),
                 'unit_amount' => [
                     'currency_code' => $transaction->getCurrency(),
-                    'value' => (float)$item->priceWithTax(),
-                ],
-                'setup_fee' => [
-                    'currency_code' => $transaction->getCurrency(),
-                    'value' => $item->getOrderable()->getPrice($item->getOrderable()->getRecurring()->getName(), true) - $item->getOrderable()->getPrice($item->getOrderable()->getRecurring()->getName()),
+                    'value' => round((float)$item->priceWithTax(), 2),
                 ],
                 'quantity' => $item->getQuantity(),
                 'category' => 'DIGITAL_GOODS'
             ];
         })->toArray();
+
 
         $links = $this->getRedirectsLinks($request, $transaction);
 
@@ -72,11 +69,11 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
                     'soft_descriptor' => $transaction->getId(),
                     'amount' => [
                         'currency_code' => $transaction->getCurrency(),
-                        'value' => $transaction->priceWithTax(),
+                        'value' => round($transaction->priceWithTax(), 2),
                         'breakdown' => [
                             'item_total' => [
                                 'currency_code' => $transaction->getCurrency(),
-                                'value' => $transaction->priceWithTax(),
+                                'value' => round($transaction->priceWithTax(), 2),
                             ],
                         ],
                     ],
@@ -110,12 +107,8 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
             $captures = $result->purchase_units[0]->payments->captures;
             $transaction->setTransactionId($captures[0]->id);
             $this->service->updateTransactionId($transaction);
-
-            if ($this->service->isOrder($transaction)) {
-                $this->service->confirmOrder($transaction, $user->getId());
-            }
-            
             $transaction->setState($transaction::COMPLETED);
+            $this->service->complete($transaction);
             $this->service->changeState($transaction);
             return $transaction;
         } catch (Exception $e) {

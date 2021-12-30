@@ -1,0 +1,20 @@
+<form action="https://www.{{ credential.islive == false ? 'sandbox.' : '' }}paypal.com/cgi-bin/webscr" method="post">
+    <input type="hidden" name="cmd" value="_xclick">
+    <input type="hidden" name="business" value="{{ credential.email }}">
+    <input type="hidden" name="item_name" value="{{ config('app.name') }}">
+    <input type="hidden" name="amount" value="{{ transaction.priceWithTax }}">
+    <input type="hidden" name="tax" value="{{ transaction.tax }}">
+    <input type="hidden" name="first_name" value="{{ user.firstname }}">
+    <input type="hidden" name="last_name" value="{{ user.lastname }}">
+    <input type="hidden" name="email" value="grgr{{ user.email }}">
+    <input type="hidden" name="charset" value="utf8">
+    <input type="hidden" name="currency_code" value="{{ transaction.currency }}">
+    <input type="hidden" name="custom"
+           value="{{ links['return'] }}---{{ transaction.id }}---{{ current_admin().id ?? 0 }}">
+    <input type="hidden" name="return" value="{{ domain }}/paypal/api">
+    <input type="hidden" name="cancel_return" value="{{ links['cancel'] }}">
+    <input type="hidden" name="notify_url" value="{{ domain }}/paypal/api">
+    <input type="hidden" name="rm" value="2">
+</form>
+
+<script>document.getElementsByTagName("form")[0].submit()</script>

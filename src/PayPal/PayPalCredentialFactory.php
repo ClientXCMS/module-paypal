@@ -11,6 +11,6 @@ class PayPalCredentialFactory
             $id = $container->get('paypal.id');
             $secret = $container->get('paypal.secret');
             $live = $container->get('paypal.live');
-         return new PaypalCredential($id, $secret, $live === "true");
+         return new PaypalCredential($secret,$id, $live === "true");
     }
 }
