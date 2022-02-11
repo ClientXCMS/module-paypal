@@ -39,7 +39,7 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
                 'sku' => $item->getId(),
                 'unit_amount' => [
                     'currency_code' => $transaction->getCurrency(),
-                    'value' => round((float)$item->priceWithTax(), 2),
+                    'value' => $item->priceWithTax(),
                 ],
                 'quantity' => $item->getQuantity(),
                 'category' => 'DIGITAL_GOODS'
@@ -69,11 +69,11 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
                     'soft_descriptor' => $transaction->getId(),
                     'amount' => [
                         'currency_code' => $transaction->getCurrency(),
-                        'value' => round($transaction->priceWithTax(), 2),
+                        'value' => $transaction->priceWithTax(),
                         'breakdown' => [
                             'item_total' => [
                                 'currency_code' => $transaction->getCurrency(),
-                                'value' => round($transaction->priceWithTax(), 2),
+                                'value' => $transaction->priceWithTax(),
                             ],
                         ],
                     ],
