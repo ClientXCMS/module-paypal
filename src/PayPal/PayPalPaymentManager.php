@@ -33,22 +33,28 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
         if ($user === null) {
             return;
         }
-        $items = collect($transaction->getItems())->map(function (TransactionItem $item) use ($transaction) {
+        $discounts = collect($transaction->getItems())->filter(function($item) { return $item->price() < 0;})->reduce(function ($i, TransactionItem $item) { return $i + $item->price(); }, 0);
+        $items = collect($transaction->getItems())->filter(function($item) { return $item->price() > 0;})->map(function (TransactionItem $item, $i) use ($transaction) {
+			$discount = 0;
+			$next = $transaction->getItems()[$i+1] ?? null;
+			if ($next != null) {
+				if ($next->price() < 0) {
+					$discount = $next->price();
+				}
+			}
             return [
                 'name' => $item->getName(),
                 'sku' => $item->getId(),
                 'unit_amount' => [
                     'currency_code' => $transaction->getCurrency(),
-                    'value' => $item->priceWithTax(),
+                    'value' => round($item->priceWithTax() + $discount, 2),
                 ],
                 'quantity' => $item->getQuantity(),
                 'category' => 'DIGITAL_GOODS'
             ];
         })->toArray();
-
-
         $links = $this->getRedirectsLinks($request, $transaction);
-
+		
         $order = new OrdersCreateRequest();
         $order->headers['prefer'] = 'return=representation';
         $order->body = [
@@ -69,15 +75,19 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
                     'soft_descriptor' => $transaction->getId(),
                     'amount' => [
                         'currency_code' => $transaction->getCurrency(),
-                        'value' => $transaction->priceWithTax(),
+                        'value' => round($transaction->priceWithTax(), 2),
                         'breakdown' => [
                             'item_total' => [
                                 'currency_code' => $transaction->getCurrency(),
-                                'value' => $transaction->priceWithTax(),
+                                'value' => round($transaction->priceWithTax(), 2),
                             ],
                         ],
                     ],
                     'items' => $items,
+					'discount' => [
+                        'currency_code' => $transaction->getCurrency(),
+                        'value' => $discounts,
+                    ]
                 ],
             ],
         ];
