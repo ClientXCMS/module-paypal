@@ -119,6 +119,10 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
             $this->service->updateTransactionId($transaction);
             $transaction->setState($transaction::COMPLETED);
             $this->service->complete($transaction);
+            
+            foreach ($transaction->getItems() as $item){
+                $this->service->delivre($item);
+            }
             $this->service->changeState($transaction);
             return $transaction;
         } catch (Exception $e) {
