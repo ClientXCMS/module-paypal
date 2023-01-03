@@ -3,6 +3,9 @@
 namespace App\PayPal;
 
 use App\Account\User;
+use App\PayPal\Exceptions\PayPalException;
+use App\Shop\Entity\Product;
+use App\Shop\Services\SubscriptionService;
 use ClientX\Auth;
 use App\Shop\Entity\Transaction;
 use App\Shop\Entity\TransactionItem;
@@ -11,7 +14,6 @@ use App\Shop\Services\TransactionService;
 use ClientX\Payment\PaymentManagerInterface;
 use ClientX\Response\RedirectResponse;
 use ClientX\Router;
-use Exception;
 use PayPalCheckoutSdk\Orders\OrdersCaptureRequest;
 use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -20,11 +22,13 @@ use stdClass;
 class PayPalPaymentManager extends AbstractPaymentManager implements PaymentManagerInterface
 {
     private PaypalCredential $credential;
+    private SubscriptionService $subscription;
 
-    public function __construct(Router $router, Auth $auth, TransactionService $service, PaypalCredential $credential)
+    public function __construct(Router $router, Auth $auth, TransactionService $service, PaypalCredential $credential, SubscriptionService $subscription)
     {
         parent::__construct($router, $auth, $service);
         $this->credential = $credential;
+        $this->subscription = $subscription;
     }
 
     public function process(Transaction $transaction, Request $request, User $user)
@@ -33,15 +37,27 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
         if ($user === null) {
             return;
         }
-        $discounts = collect($transaction->getItems())->filter(function($item) { return $item->price() < 0;})->reduce(function ($i, TransactionItem $item) { return $i + $item->price(); }, 0);
-        $items = collect($transaction->getItems())->filter(function($item) { return $item->price() > 0;})->map(function (TransactionItem $item, $i) use ($transaction) {
-			$discount = 0;
-			$next = $transaction->getItems()[$i+1] ?? null;
-			if ($next != null) {
-				if ($next->price() < 0) {
-					$discount = $next->price();
-				}
-			}
+
+        $links = $this->getRedirectsLinks($request, $transaction);
+
+        if ($this->checkIfTransactionCanSubscribe($transaction)) {
+            return (new PayPalSubscribe($this->credential, $this->subscription, $this->getCurrency()))->getLink($user, $transaction, $links);
+        }
+        $discounts = collect($transaction->getItems())->filter(function ($item) {
+            return $item->price() < 0;
+        })->reduce(function ($i, TransactionItem $item) {
+            return $i + $item->price();
+        }, 0);
+        $items = collect($transaction->getItems())->filter(function ($item) {
+            return $item->price() > 0;
+        })->map(function (TransactionItem $item, $i) use ($transaction) {
+            $discount = 0;
+            $next = $transaction->getItems()[$i+1] ?? null;
+            if ($next != null) {
+                if ($next->price() < 0) {
+                    $discount = $next->price();
+                }
+            }
             return [
                 'name' => $item->getName(),
                 'sku' => $item->getId(),
@@ -53,8 +69,7 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
                 'category' => 'DIGITAL_GOODS'
             ];
         })->toArray();
-        $links = $this->getRedirectsLinks($request, $transaction);
-		
+
         $order = new OrdersCreateRequest();
         $order->headers['prefer'] = 'return=representation';
         $order->body = [
@@ -84,7 +99,7 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
                         ],
                     ],
                     'items' => $items,
-					'discount' => [
+                    'discount' => [
                         'currency_code' => $transaction->getCurrency(),
                         'value' => $discounts,
                     ]
@@ -106,6 +121,10 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
     public function execute(Transaction $transaction, Request $request, User $user)
     {
         $token = $request->getQueryParams()['token'] ?? "";
+
+        if (array_key_exists('auto', $request->getQueryParams())) {
+            return (new PayPalSubscribe($this->credential, $this->subscription, $this->getCurrency()))->execute($transaction->getItems(), $transaction, $this->service);
+        }
         if ($transaction->getTransactionId() !== $token) {
             return new RedirectResponse($this->getRedirectsLinks($request, $transaction)['cancel']);
         }
@@ -119,15 +138,15 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
             $this->service->updateTransactionId($transaction);
             $transaction->setState($transaction::COMPLETED);
             $this->service->complete($transaction);
-            
-            foreach ($transaction->getItems() as $item){
+
+            foreach ($transaction->getItems() as $item) {
                 $this->service->delivre($item);
             }
             $this->service->changeState($transaction);
             return $transaction;
-        } catch (Exception $e) {
+        } catch (PayPalException $e) {
             $transaction->setState($transaction::REFUSED);
-            $transaction->setReason("PayPal error");
+            $transaction->setReason("PayPal error : " . $e->getMessage());
             $this->service->changeState($transaction);
             $this->service->setReason($transaction);
         }
@@ -137,5 +156,19 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
     public function refund(array $items): bool
     {
         return false;
+    }
+
+    private function checkIfTransactionCanSubscribe(Transaction $transaction): bool
+    {
+        if (!array_key_exists(SubscriptionService::KEY_SUBSCRIBE, \ClientX\request()->getParsedBody())) {
+            return false;
+        }
+
+        if (!array_key_exists('PAYPAL_SUBSCRIPTION', $_ENV) || $_ENV['PAYPAL_SUBSCRIPTION'] == 'false') {
+            return false;
+        }
+        return collect($transaction->getItems())->filter(function (TransactionItem $transactionItem) {
+            return $transactionItem->getOrderable() instanceof Product && $transactionItem->getOrderable()->getPaymentType() == 'recurring';
+        })->count() == 1;
     }
 }

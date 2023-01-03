@@ -6,6 +6,8 @@ use App\PayPal\PayPalCredentialFactory;
 use App\PayPal\PayPalPaymentBoard;
 use App\PayPal\PayPalPaymentType;
 
+use App\PayPal\PayPalSubscribe;
+use function DI\autowire;
 use function \DI\get;
 use function \DI\add;
 use function \DI\factory;
@@ -17,5 +19,8 @@ return [
     'payments.type' => add([get(PayPalPaymentType::class)]),
     'autorenewtypes' => add([get(PayPalAutoRenewType::class)]),
     PaypalCredential::class => factory(PayPalCredentialFactory::class),
-    'payment.boards' => add(get(PayPalPaymentBoard::class))
+    'payment.boards' => add(get(PayPalPaymentBoard::class)),
+    'subscribers.list' => add(PayPalSubscribe::class),
+    PayPalSubscribe::class => autowire()->constructorParameter("currency", get("app.currency")),
+
 ];
