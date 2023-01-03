@@ -4,6 +4,7 @@ namespace App\PayPal;
 
 use App\Auth\User;
 use App\PayPal\Exceptions\PayPalException;
+use App\Shop\Entity\IncomeSubscriptionDetails;
 use App\Shop\Entity\Product;
 use App\Shop\Entity\Recurring;
 use App\Shop\Entity\SubscriptionDetails;
@@ -12,9 +13,11 @@ use App\Shop\Entity\TransactionItem;
 use App\Shop\Payment\SubscribeInterface;
 use App\Shop\Services\SubscriptionService;
 use App\Shop\Services\TransactionService;
+use Carbon\Carbon;
 use ClientX\Response\RedirectResponse;
 use DateTimeInterface;
 use PayPal\Api\Agreement;
+use PayPal\Api\AgreementDetails;
 use PayPal\Api\AgreementStateDescriptor;
 use PayPal\Api\AgreementTransaction;
 use PayPal\Api\Currency;
@@ -25,10 +28,12 @@ use PayPal\Api\PatchRequest;
 use PayPal\Api\Payer;
 use PayPal\Api\PaymentDefinition;
 use PayPal\Api\Plan;
+use PayPal\Api\PlanList;
 use PayPal\Auth\OAuthTokenCredential;
 use PayPal\Common\PayPalModel;
 use PayPal\Exception\PayPalConnectionException;
 use PayPal\Rest\ApiContext;
+use PayPal\Validation\ArgumentValidator;
 use function ClientX\request;
 
 class PayPalSubscribe implements SubscribeInterface
@@ -201,5 +206,27 @@ class PayPalSubscribe implements SubscribeInterface
             return null;
         }
         return current($transactions->getAgreementTransactionList())->getTransactionId();
+    }
+
+    public function getDetailsLink(string $token): string
+    {
+        return "https://www.paypal.com/billing/subscriptions/$token";
+    }
+
+    public function estimatedIncomeSubscription(int $months = 0): IncomeSubscriptionDetails
+    {
+        $income = (new IncomeSubscriptionDetails())->setType($this->type());
+        $context = new ApiContext(new OAuthTokenCredential($this->credential->id, $this->credential->secret));
+        $subscriptions = $this->subscriptionService->getSubscriptionForType('paypal');
+        $currentMonth = Carbon::now()->addMonths($months)->format('m');
+        foreach ($subscriptions as $subscription){
+            $details = Agreement::get($subscription->token, $context);
+            if ($details->getState() == 'Active' && Carbon::createFromFormat(DateTimeInterface::ISO8601, $details->getAgreementDetails()->getNextBillingDate())->format('m') == $currentMonth){
+                $income->addAmount($details->getPlan()->getPaymentDefinitions()[0]->getAmount()->getValue());
+                $income->addNextRenewal($subscription->token,Carbon::createFromFormat(DateTimeInterface::ISO8601, $details->getAgreementDetails()->getNextBillingDate())->toDate());
+                $income->addInterval($subscription->token,$details->getPlan()->getPaymentDefinitions()[0]->getFrequencyInterval());
+            }
+        }
+        return $income;
     }
 }
