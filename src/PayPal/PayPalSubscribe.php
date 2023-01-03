@@ -3,6 +3,7 @@
 namespace App\PayPal;
 
 use App\Auth\User;
+use App\PayPal\Exceptions\PayPalException;
 use App\Shop\Entity\Product;
 use App\Shop\Entity\Recurring;
 use App\Shop\Entity\SubscriptionDetails;
@@ -137,11 +138,11 @@ class PayPalSubscribe implements SubscribeInterface
             $transactionService->complete($transaction);
 
             foreach ($transaction->getItems() as $item) {
-                $this->service->delivre($item);
+                $transactionService->delivre($item);
             }
             $transactionService->changeState($transaction);
             return $transaction;
-        } catch (\Exception $e) {
+        } catch (PayPalException $e) {
             return false;
         }
     }
