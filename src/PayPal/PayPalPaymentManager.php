@@ -19,6 +19,8 @@ use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use stdClass;
 
+use App\Shop\VATCalculator;
+
 class PayPalPaymentManager extends AbstractPaymentManager implements PaymentManagerInterface
 {
     private PaypalCredential $credential;
@@ -58,12 +60,13 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
                     $discount = $next->price();
                 }
             }
+			dump($item);
             return [
                 'name' => $item->getName(),
                 'sku' => $item->getId(),
                 'unit_amount' => [
                     'currency_code' => $transaction->getCurrency(),
-                    'value' => round($item->subtotal() + $discount, 2),
+                    'value' => round($item->setupfee() + $item->price() + $discount, 2),
                 ],
                 'quantity' => $item->getQuantity(),
                 'category' => 'DIGITAL_GOODS'
@@ -90,11 +93,11 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
                     'soft_descriptor' => $transaction->getId(),
                     'amount' => [
                         'currency_code' => $transaction->getCurrency(),
-                        'value' => round($transaction->total(), 2),
+                        'value' => round($transaction->subtotal(), 2),
                         'breakdown' => [
                             'item_total' => [
                                 'currency_code' => $transaction->getCurrency(),
-                                'value' => round($transaction->total(), 2),
+                                'value' => round($transaction->subtotal(), 2),
                             ],
                         ],
                     ],
