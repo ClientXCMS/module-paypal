@@ -60,7 +60,6 @@ class PayPalPaymentManager extends AbstractPaymentManager implements PaymentMana
                     $discount = $next->price();
                 }
             }
-			dump($item);
             return [
                 'name' => $item->getName(),
                 'sku' => $item->getId(),
