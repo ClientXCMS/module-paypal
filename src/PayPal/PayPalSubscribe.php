@@ -69,7 +69,7 @@ class PayPalSubscribe implements SubscribeInterface
             ->setName($product->getName() . " - CLIENTXCMS ")
             ->setType("REGULAR")
             ->setAmount(new Currency([
-                'value' => $transaction->priceWithTax() - $discounts,
+                'value' => $transaction->total() - $discounts,
                 'currency' => $this->currency,
             ]))
             ->setFrequency("MONTH")
